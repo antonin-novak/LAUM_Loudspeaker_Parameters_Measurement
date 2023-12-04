@@ -1,3 +1,18 @@
+"""
+Loudspeaker.py
+
+This module defines the Loudspeaker class which is used for analyzing and modeling the behavior of loudspeakers. 
+It includes functionality for calculating electrical and mechanical impedance, estimating various parameters, 
+and plotting relevant data for analysis.
+
+Classes:
+    Loudspeaker: Represents a loudspeaker and provides methods for analyzing its properties.
+
+Functions:
+    freq_limits: Helper function to limit frequencies for analysis.
+    find_resonance_frequency: Function to find the resonance frequency from the given data.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from modules.ElectricalImpedance import ElectricalImpedance
@@ -5,6 +20,18 @@ from modules.MechanicalImpedance import MechanicalImpedance
 
 
 def freq_limits(f_axis, f_min, f_max, *variables):
+    """
+    Limit the frequency range of the provided data.
+
+    Args:
+        f_axis (array): Array of frequency values.
+        f_min (float): Minimum frequency limit.
+        f_max (float): Maximum frequency limit.
+        variables (list): List of variables to limit.
+
+    Returns:
+        list: List of variables limited to the specified frequency range.
+    """
     f1_index = np.abs(f_axis - f_min).argmin()
     f2_index = np.abs(f_axis - f_max).argmin()
 
@@ -16,12 +43,52 @@ def freq_limits(f_axis, f_min, f_max, *variables):
 
 
 def find_resonance_frequency(f, VI):
+    """
+    Find the resonance frequency from voltage and current data.
+
+    Args:
+        f (array): Frequency array.
+        VI (array): Voltage/Current data.
+
+    Returns:
+        float: Resonance frequency.
+    """
     f_index = np.argmax(np.abs(VI))
     return f[f_index]
 
 
 class Loudspeaker:
+    """
+    Represents a loudspeaker for analyzing its electrical and mechanical properties.
+
+    The class provides methods to estimate resonance frequency, electrical and mechanical impedances,
+    and to plot these properties for analysis.
+
+    Methods:
+        __init__: Constructor to initialize the loudspeaker with given data.
+        Bl_estimate: Estimates the Bl product.
+        Ze_from_measurement: Calculates electrical impedance from measurements.
+        Zm_from_measurement: Calculates mechanical impedance from measurements.
+        plot_Ze: Plots electrical impedance.
+        plot_Zm: Plots mechanical impedance.
+        ... [other methods] ...
+    """
+
     def __init__(self, f_axis, U, I, V, model_Ze='RL', model_Zm='mass-spring', f_min=20, f_max=10e3, displacement_delay_sec=650e-6):
+        """
+        Initialize the Loudspeaker object with measurement data and models.
+
+        Args:
+            f_axis (array): Frequency axis for the analysis.
+            U (array): Voltage measurement data.
+            I (array): Current measurement data.
+            V (array): Velocity measurement data.
+            model_Ze (str): Model type for electrical impedance (default 'RL').
+            model_Zm (str): Model type for mechanical impedance (default 'mass-spring').
+            f_min (float): Minimum frequency for analysis (default 20 Hz).
+            f_max (float): Maximum frequency for analysis (default 10 kHz).
+            displacement_delay_sec (float): Displacement delay in seconds (default 650 µs).
+        """
 
         # limit frequencies
         U, I, V, f_axis = freq_limits(f_axis, f_min, f_max, U, I, V, f_axis)
@@ -67,6 +134,12 @@ class Loudspeaker:
         Ux, Ix, Vx = freq_limits(
             self.f_axis, self.f_res/2, self.f_res*2, self.U, self.I, self.V)
 
+        # The loop to estimate the Bl value by minimizing the standard deviation
+        # of the real part of the measured electrical impedance (Ze).
+        # The loop iterates over a range of Bl_test values from -maxBl to maxBl
+        # in steps of stepBl. These values are potential estimates for the Bl parameter.
+        # Note that a negative value of Bl can happen due to inverted polarity of the
+        # loudspeaker under test.
         Bl = 0
         std_test = np.Inf
         for Bl_test in np.arange(-maxBl, maxBl, stepBl):
@@ -80,19 +153,27 @@ class Loudspeaker:
 
     @staticmethod
     def Ze_from_measurement(U, I, V, Bl):
+        # Basic equation for electrical impedance
         return U/I - Bl*V/I
 
     @staticmethod
     def Zm_from_measurement(I, V, Bl):
+        # Basic equation for mechanical impedance
         return Bl*I/V
 
     def print_parameters(self):
         print('-----------------------------------------')
-        print(f"{'Bl (Force factor)':<30}: {self.Bl:.2e} Tm")
+        print(f"{'Bl (Force factor)':<30}: {np.abs(self.Bl):.2e} Tm")
         self.Ze_model_object.print_parameters()
         self.Zm_model_object.print_parameters()
         print(f"{'Fs (res. freq. from impedance)':<30}: {self.f_res:.2e} Hz")
         print('-----------------------------------------')
+
+        # Inform the user if the polarity was inverted
+        if self.Bl < 0:
+            print(
+                f"!!! Bl was estimated as Bl = {self.Bl:.2e} Tm (negative value) that indicates inverted polarity")
+            print("of the loudspeaker terminals during the measurement.")
 
     def input_impedance_from_model(self):
 
@@ -103,9 +184,14 @@ class Loudspeaker:
         return Ze + self.Bl**2 / Zm
 
     def plot_input_impedance(self):
+
+        # measued data
         Z_measured_data = self.U/self.I
+
+        # model data
         Z_model_data = self.input_impedance_from_model()
 
+        # find the maximum value to avoid matplotlib wrong auto y-limits
         maxZ = np.max([np.nanmax(np.abs(Z_model_data)),
                       np.nanmax(np.abs(Z_measured_data))])
 
@@ -129,9 +215,12 @@ class Loudspeaker:
 
     def plot_Ze(self):
 
-        Ze_model_data = self.Ze_model_object.calculate_impedance(1j*self.omega)
+        # measued data
         Ze_measured_data = Loudspeaker.Ze_from_measurement(
             self.U, self.I, self.V, self.Bl)
+
+        # model data
+        Ze_model_data = self.Ze_model_object.calculate_impedance(1j*self.omega)
 
         fig, ax = plt.subplots(2)
         ax[0].semilogx(self.f_axis, np.real(
@@ -157,9 +246,12 @@ class Loudspeaker:
 
     def plot_Zm(self):
 
-        Zm_model_data = self.Zm_model_object.calculate_impedance(1j*self.omega)
+        # measued data
         Zm_measured_data = Loudspeaker.Zm_from_measurement(
             self.I, self.V, self.Bl)
+
+        # model data
+        Zm_model_data = self.Zm_model_object.calculate_impedance(1j*self.omega)
 
         fig, ax = plt.subplots(2)
         ax[0].loglog(self.f_axis, np.real(

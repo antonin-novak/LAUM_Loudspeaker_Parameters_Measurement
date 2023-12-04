@@ -54,7 +54,7 @@ class ElectricalImpedance:
 
     Author: Antonin Novak
     Version: 1.0
-    Last Updated: 1.12.2023
+    Last Updated: 4.12.2023
     '''
 
     def __init__(self, omega, Ze_measured_data, model):

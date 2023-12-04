@@ -72,10 +72,10 @@ f_axis = np.fft.rfftfreq(fs, 1/fs)
 
 
 # list of Ze models: RL, Leach, R2L2, R3L3
-# list of Zm models: mass-spring, exp
+# list of Zm models: mass-spring, exp, log, frac
 
 speaker = Loudspeaker(f_axis, U, I, V, model_Ze='Leach',
-                      model_Zm='mass-spring')
+                      model_Zm='frac')
 speaker.print_parameters()
 speaker.plot_input_impedance()
 

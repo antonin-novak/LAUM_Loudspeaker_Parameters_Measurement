@@ -44,7 +44,7 @@ class MechanicalImpedance:
             Knudsen-Jensen log model
             Zm = Mms*jw + Rms + 1/(s*Cl*(1-lamb*np.log(s)))
 
-        novak_model
+        frac_model
             Model taking into account elastic and viscous losses
             Zm = Mms*jw + Rv + eta*jw**(beta-1) + 1/(C0*jw)
 
@@ -66,7 +66,7 @@ class MechanicalImpedance:
             'exp': (self.exp_model, self.exp_print, [1e-2, 1, 1e-3, 0], [1e-1, 100, 1e-2, 0.5]),
             'log': (self.log_model, self.log_print, [1e-2, 1, 1e-3, 0], [1e-1, 100, 1e-2, 1]),
             # Mms, Rv, eta, beta, C0
-            'novak': (self.novak_model, self.novak_print, [1e-2, 1, 100, 0, 1e-3], [1e-1, 100, 10000, 1, 1e-2]),
+            'frac': (self.frac_model, self.frac_print, [1e-2, 1, 100, 0, 1e-3], [1e-1, 100, 10000, 1, 1e-2]),
         }
 
         # Set model-specific methods and parameters
@@ -145,11 +145,11 @@ class MechanicalImpedance:
         print(f"{'lambda (log. parameter)':<30}: {lamb:.2e}")
         self.print_resonant_frequency()
 
-    def novak_model(self, s):
+    def frac_model(self, s):
         Mms, Rv, eta, beta, C0 = self.params
         return Mms*s + Rv + eta*s**(beta-1) + 1/(C0*s)
 
-    def novak_print(self):
+    def frac_print(self):
         Mms, Rv, eta, beta, C0 = self.params
         print(f"{'Mms (Mass)':<30}: {Mms:.2e} kg")
         print(f"{'Rv (viscouss loss coefficient)':<30}: {Rv:.2e} Ns/m")

@@ -2,6 +2,32 @@ import numpy as np
 
 
 class SynchSweptSine():
+    ''' 
+    Class for generating and analyzing synchronized swept sine signals. 
+    It is used to measure impulse response and frequency response functions
+    of linear systems.
+
+    Usage:
+    -----
+    # Creating an instance of the SynchSweptSine class
+    swept_sine = SynchSweptSine()
+
+    # Generating a swept sine signal
+    signal = swept_sine.signal()
+
+    # Assuming 'output_signal' is the recorded response of a system to 'signal'
+    # Calculate the frequency response function
+    frf = swept_sine.getFRF(output_signal)
+
+    # Calculate the impulse response
+    ir = swept_sine.getIR(output_signal)
+    ```
+
+    Author: Antonin Novak
+    Version: 1.0
+    Last Updated: 1.12.2023
+    '''
+
     def __init__(self, f1=20, f2=20e3, fs=48e3, T=5, fade=[9600, 960]):
         self.f1 = f1
         self.f2 = f2
@@ -11,12 +37,15 @@ class SynchSweptSine():
         self.L = T/np.log(f2/f1)
 
     def t_axis(self):
+        ''' Returns the time axis for the signal based on the sampling rate and duration.'''
         return np.arange(0, np.round(self.fs*self.T-1)/self.fs, 1/self.fs)
 
     def signal(self):
+        ''' Generates the swept sine signal.'''
         t = self.t_axis()
         s = np.sin(2*np.pi*self.f1*self.L*np.exp(t/self.L))
 
+        ''' Fading in/out at the beginning and end of the signal.'''
         fade = self.fade
         # fade-in the input signal
         if self.fade[0] > 0:

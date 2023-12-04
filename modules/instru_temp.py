@@ -2,13 +2,13 @@
 # lebon 07/11/2017
 
 import requests
-import json
 
 
 def get_temperature_humidity():
     try:
         # variables
-        domoticzserver = "laum-raspv3-7.univ-lemans.fr:8080" 	# give the ip address of the room
+        # give the ip address of the room
+        domoticzserver = "laum-raspv3-7.univ-lemans.fr:8080"
         device_id = '15' 						# give the id of the device
         user = 'laum'
         password = 'laum'
@@ -16,12 +16,14 @@ def get_temperature_humidity():
         # method to send a request to the database
 
         def domoticzrequest(url):
-            response = requests.get(url, auth=requests.auth.HTTPBasicAuth(user, password))
+            response = requests.get(
+                url, auth=requests.auth.HTTPBasicAuth(user, password))
             return response.json()
 
         # MAIN
         # make the database request
-        domoticzurl = "http://" + domoticzserver + "/json.htm?type=devices&rid=" + device_id
+        domoticzurl = "http://" + domoticzserver + \
+            "/json.htm?type=devices&rid=" + device_id
         # get data from database
         json_object = domoticzrequest(domoticzurl)
         if json_object["status"] == "OK":
